@@ -1,0 +1,152 @@
+version: '3.6'
+
+networks:
+  web:
+    external: true
+  back:
+    external: false
+    driver: overlay
+
+volumes:
+  geth-volume:
+  traefik-volume:
+  redis-volume:
+
+configs:
+  traefik-config:
+    file: traefik.toml
+
+secrets:
+  RETHINKDB_PASSWORD:
+    external: true
+
+services:
+
+  traefik:
+    image: traefik:1.6.2-alpine
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - traefik-volume:/etc/traefik/acme/
+    configs:
+      - source: traefik-config
+        target: /etc/traefik/traefik.toml
+    networks:
+      - web
+    ports:
+      - 80:80
+      - 443:443
+    deploy:
+      replicas: 1
+      mode: replicated
+      update_config:
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+        delay: 60s
+
+  ethvm:
+    image: enkryptio/ethvm:latest
+    networks:
+      - back
+    labels:
+      - "traefik.enable=true"
+      - "traefik.default.protocol=http"
+      - "traefik.frontend.rule=Host:ethvm.lan"
+      - "traefik.frontend.passHostHeader=true"
+      - "traefik.backend=ethvm"
+      - "traefik.backend.loadbalancer.method=drr"
+      - "traefik.backend.loadbalancer.stickiness=true"
+      - "traefik.backend.loadbalancer.swarm=true"
+    environment:
+      - ETHVM_HOST=0.0.0.0
+      - ETHVM_PORT=80
+      - ETVHM_DOCKER=true
+    deploy:
+      replicas: 1
+      mode: replicated
+      update_config:
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+        delay: 60s
+      placement:
+        constraints:
+        - node.role == worker
+
+  ethvm_socket_server:
+    image: enkryptio/ethvm-socket-server:latest
+    depends_on:
+      - geth
+      - redis
+      - rethinkdb
+    networks:
+      - back
+    deploy:
+      replicas: 1
+      mode: replicated
+      update_config:
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+        delay: 60s
+
+  redis:
+    image: redis:4.0.9-alpine
+    networks:
+      - back
+    volumes:
+      - redis-volume:/data
+    deploy:
+      replicas: 1
+      mode: replicated
+      update_config:
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+        delay: 60s
+
+  rethinkdb:
+    image: kallqvist/rethinkdb-cluster:latest
+    restart: unless-stopped
+    networks:
+      - back
+    secrets:
+      - RETHINKDB_PASSWORD
+    command:
+      - /bin/bash
+      - -c
+      - |
+        JOINS=`getent hosts tasks.rethinkdb | awk '{ print $1 }' | sed -e 's/^/--join /' | tr '\n' ' '`
+        echo "Starting rethinkdb using $JOINS"
+        rethinkdb --bind all --no-http-admin $JOINS
+    deploy:
+      replicas: 1
+      mode: replicated
+      update_config:
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+        delay: 60s
+
+  geth:
+    image: enkryptio/go-ethereum:latest
+    depends_on:
+      - rethinkdb
+    volumes:
+      - geth-volume:/geth
+    networks:
+      - back
+    labels:
+      - "traefik.enable=true"
+      - "traefik.default.protocol=http"
+      - "traefik.frontend.rule=Host:geth.ethvm.lan"
+      - "traefik.port=9545"
+      - "traefik.backend=geth"
+    environment:
+      - RETHINKDB_URL=http://rethinkdb:28015
+    command: geth --datadir="/geth/" --ethvm --gcmode archive --rpc --rpcapi eth,web3 --rpcaddr '0.0.0.0' --rpcport 9545 --syncmode full --maxpeers 25 --nousb
+    deploy:
+      placement:
+        constraints:
+        - node.role == worker
+        - node.labels.geth == geth
