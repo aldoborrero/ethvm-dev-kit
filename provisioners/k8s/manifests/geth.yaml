@@ -1,0 +1,121 @@
+---
+
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: ssd
+parameters:
+  type: pd-ssd
+provisioner: kubernetes.io/gce-pd
+#provisioner: docker.io/hostpath # Use it on minikube
+reclaimPolicy: Retain
+
+---
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  namespace: ethvm
+  name: geth-master-data
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi
+  storageClassName: ssd
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: ethvm
+  name: geth-rpc
+  labels:
+    name: geth-rpc
+spec:
+  ports:
+    - name: geth-rpc
+      protocol: TCP
+      port: 9545
+      targetPort: 9545
+  selector:
+    app: geth
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: ethvm
+  name: geth-mstr-p2p
+  labels:
+    name: geth-mstr-p2p
+spec:
+  ports:
+    - name: geth-mstr-p2p
+      protocol: TCP
+      port: 30303
+      targetPort: 30303
+  type: LoadBalancer
+  #type: NodePort # Use it on minikube
+  selector:
+    geth: master
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: ethvm
+  name: geth-master
+  labels:
+    app: geth
+    geth: master
+spec:
+  selector:
+    matchLabels:
+      app: geth
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: geth
+        geth: master
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: geth
+                operator: In
+                values:
+                - backup
+            topologyKey: "kubernetes.io/hostname"
+      containers:
+      - name: geth
+        image: enkryptio/go-ethereum
+        ports:
+        - containerPort: 8545
+        - containerPort: 30303
+        volumeMounts:
+        - mountPath: /usr/share/geth
+          name: geth-pd
+        command:
+        - geth
+        args:
+        - --datadir="/usr/share/geth"
+        - --rpc
+        - --rpcaddr="0.0.0.0"
+        - --rpcport="8545"
+        - --rpcapi="eth,web3,net"
+        - --maxpeers="25"
+        - --gcmode="archive"
+        - --nousb
+        #- --rinkeby # use it on minikube
+      volumes:
+      - name: geth-pd
+        persistentVolumeClaim:
+          claimName: geth-master-data
