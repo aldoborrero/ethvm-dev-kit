@@ -29,6 +29,7 @@ metadata:
   annotations:
     service.alpha.kubernetes.io/tolerate-unready-endpoints: "false"
 spec:
+  clusterIP: None
   selector:
     app: redis-cluster
   ports:
@@ -38,7 +39,6 @@ spec:
   - port: 16379
     targetPort: 16379
     name: gossip
-  clusterIP: None
 
 ---
 
@@ -63,6 +63,7 @@ spec:
       containers:
       - name: redis-cluster
         image: enkryptio/redis-cluster:4.0.10
+        imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 6379
           name: client

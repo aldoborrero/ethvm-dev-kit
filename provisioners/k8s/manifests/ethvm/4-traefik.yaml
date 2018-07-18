@@ -87,6 +87,7 @@ spec:
       containers:
       - image: traefik:1.6.2-alpine
         name: traefik-ingress-lb
+        imagePullPolicy: IfNotPresent
         volumeMounts:
         - name: config
           mountPath: /etc/traefik/config
