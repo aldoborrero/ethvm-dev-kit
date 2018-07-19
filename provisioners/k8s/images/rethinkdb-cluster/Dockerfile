@@ -9,10 +9,19 @@
 # Use golang base image to build probe
 FROM golang:1.10-alpine as builder
 
-COPY rethink-probe /go/src/rethink-probe
-WORKDIR /go/src/rethinkdb-probe
+# Add alternative repositories
+RUN echo -e "http://uk.alpinelinux.org/alpine/v3.5/main\nhttp://uk.alpinelinux.org/alpine/v3.5/community" > /etc/apk/repositories
 
-RUN go get ./... \
+# Install dependencies
+RUN apk add --no-cache \
+  git \
+  gcc \
+  musl-dev
+
+COPY ./rethink-probe /go/src/rethink-probe
+WORKDIR /go/src/rethink-probe
+
+RUN go get . \
   && go build -a -ldflags '-w -s' .
 
 FROM alpine:3.8
