@@ -22,8 +22,8 @@ spec:
   resources:
     requests:
       storage: 10Gi
-  storageClassName: ssd
-  # storageClassName: standard # minikube
+  # storageClassName: ssd
+  storageClassName: standard # minikube
 
 ---
 
@@ -58,8 +58,8 @@ spec:
       protocol: TCP
       port: 30303
       targetPort: 30303
-  type: LoadBalancer
-  # type: NodePort # minikube
+  # type: LoadBalancer
+  type: NodePort # minikube
   selector:
     geth: mainnet
 
@@ -115,7 +115,7 @@ spec:
         - --gcmode=archive
         - --syncmode=full
         - --nousb
-        # - --rinkeby # minikube
+        - --rinkeby # minikube
       volumes:
       - name: geth-pd
         persistentVolumeClaim:
