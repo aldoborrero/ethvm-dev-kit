@@ -1,8 +1,5 @@
 FROM redis:4.0.10-alpine
 
-# Add alternative repositories
-RUN echo -e "http://uk.alpinelinux.org/alpine/v3.5/main\nhttp://uk.alpinelinux.org/alpine/v3.5/community" > /etc/apk/repositories
-
 # Install dependencies
 RUN apk add --no-cache \
   ca-certificates \
