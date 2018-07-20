@@ -9,9 +9,6 @@
 # Use golang base image to build probe
 FROM golang:1.10-alpine as builder
 
-# Add alternative repositories
-RUN echo -e "http://uk.alpinelinux.org/alpine/v3.5/main\nhttp://uk.alpinelinux.org/alpine/v3.5/community" > /etc/apk/repositories
-
 # Install dependencies
 RUN apk add --no-cache \
   git \
@@ -30,9 +27,6 @@ COPY --from=builder /go/src/rethink-probe/rethink-probe /usr/local/bin/
 
 RUN chmod +x /usr/local/bin/rethink-probe
 
-# Add alternative repositories
-RUN echo -e "http://uk.alpinelinux.org/alpine/v3.5/main\nhttp://uk.alpinelinux.org/alpine/v3.5/community" > /etc/apk/repositories
-
 # Install dependencies
 RUN apk add --no-cache \
   jq \
@@ -41,8 +35,8 @@ RUN apk add --no-cache \
   rethinkdb
 
 # Copy files
-COPY ./run.sh /
-RUN chmod u+x /run.sh
+COPY ./run.sh /usr/local/bin/
+RUN chmod u+x /usr/local/bin/run.sh
 
 # Volumes
 RUN mkdir /data
@@ -53,4 +47,4 @@ VOLUME ["/data"]
 #     	process cluster webui
 EXPOSE	28015   29015   8080
 
-ENTRYPOINT ["dumb-init", "/run.sh"]
+ENTRYPOINT ["dumb-init", "run.sh"]
