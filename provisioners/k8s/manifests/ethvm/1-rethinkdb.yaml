@@ -3,7 +3,7 @@
 apiVersion: v1
 kind: Secret
 metadata:
-  name: rethinkdb-secret
+  name: rethinkdb-secrets
   namespace: ethvm
   labels:
     app: rethinkdb-cluster
@@ -16,7 +16,7 @@ data:
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
-  name: rethinkdb
+  name: rethinkdb-storage
   namespace: ethvm
   labels:
     app: rethinkdb-cluster
@@ -173,7 +173,7 @@ spec:
   - metadata:
       name: datadir
       annotations:
-        volume.beta.kubernetes.io/storage-class: rethinkdb
+        volume.beta.kubernetes.io/storage-class: rethinkdb-storage
     spec:
       accessModes: ["ReadWriteOnce"]
       resources:
@@ -225,7 +225,7 @@ spec:
             - name: RETHINKDB_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: rethinkdb-secret
+                  name: rethinkdb-secrets
                   key: rethinkdb-password
             - name: POD_IP
               valueFrom:
@@ -245,4 +245,4 @@ spec:
           projected:
             sources:
             - secret:
-                name: rethinkdb-secret
+                name: rethinkdb-secrets
