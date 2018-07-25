@@ -4,15 +4,17 @@ import * as rpc from '@enkrypt.io/json-rpc2'
 import commander from 'commander'
 import { simpleEncode } from 'ethereumjs-abi'
 import EthereumTx from 'ethereumjs-tx'
-import { toBuffer, bufferToHex, generateAddress } from 'ethereumjs-util'
+import { bufferToHex, generateAddress, toBuffer } from 'ethereumjs-util'
+import * as utils from 'web3-utils'
 import Ora from 'ora'
 
 import data from './accounts.json'
 
 const { accounts, tokencontract, from } = data
 
+const version = '1.0.0'
+
 const ora = new Ora({
-  spinner: 'dots',
   color: 'yellow'
 })
 const r = rpc.Client.$create(8545, 'localhost')
@@ -95,80 +97,100 @@ async function fillAccountsWithEther(txParams: Txp): Promise<any> {
     txParams.value = '0x2000000000000000'
     const privateKey = Buffer.from(from.key, 'hex')
     try {
-      ora.info(`sending ${txParams.value} wei  to   ${txParams.to}`)
+      ora.info(`Sending: ${txParams.value} wei to ${txParams.to}`)
       const done = await send(txParams, privateKey)
-      ora.info(`Txhash ${JSON.stringify(done.res)}`)
+      ora.info(`Tx hash: ${JSON.stringify(done.res)}`)
     } catch (error) {
       ora.fail(JSON.stringify(error))
     }
   }
-  ora.succeed('Filled all accounts with ether  ')
+
+  ora.succeed('Filled all accounts with ether')
   ora.stopAndPersist()
+
   return Promise.resolve()
 }
 
-async function sendRandomTX(txParams: Txp): Promise<any> {
+async function sendRandomTX(txParams: Txp, iter: Number = 10): Promise<any> {
+  let sent = 0
   let i = 0
-  while (i < 20) {
+  while (i < iter) {
     const to = Math.floor(Math.random() * (accounts.length - 1))
     const from = Math.floor(Math.random() * (accounts.length - 1))
+
+    // Double check we're not sending to the same address
+    if (from === to) {
+      continue
+    }
+
+    const privateKey = Buffer.from(accounts[from].key, 'hex')
+
     txParams.to = accounts[to].address
     txParams.from = accounts[from].address
-    const privateKey = Buffer.from(accounts[from].key, 'hex')
+
     try {
-      ora.info(`sending tx to   ${JSON.stringify(txParams.to)}`)
+      ora.info(`Sending tx to: ${JSON.stringify(txParams.to)}`)
       const done = await send(txParams, privateKey)
-      ora.info(`txhash ${JSON.stringify(done.res)}`)
+      ora.info(`Tx hash: ${JSON.stringify(done.res)}`)
     } catch (error) {
       ora.fail(JSON.stringify(error))
     }
+
     i++
+    sent++
   }
-  ora.succeed('sent Random txs   ' + (accounts.length - 1))
+
+  ora.info(`Random txs sent: ${sent}`)
   ora.stopAndPersist()
+
   return Promise.resolve()
 }
 
 async function fillAndSend(txParams: Txp): Promise<any> {
   const balance = await checkBalance(txParams.from)
-  ora.info(`balance ${balance}`)
-  if (parseInt(balance, 16) > 1000000000000000000) {
-    await fillAccountsWithEther(txParams)
-    await sendRandomTX(txParams)
-    return Promise.resolve()
+  ora.info(`Balance ${utils.fromWei(balance)}`)
+
+  if (parseInt(balance, 16) < utils.toWei('1')) {
+    ora.warn(`Not enough balance in account: ${txParams.from}`)
+    return Promise.reject()
   }
-  ora.warn('Not enough balance in Account, fill at least 100 ETH')
+
+  await sendRandomTX(txParams)
+  return Promise.resolve()
 }
 
 async function contractTxs(txParams: Txp): Promise<any> {
   const privateKey = Buffer.from(from.key, 'hex')
+
   let contractAddress: string = ''
-  txParams.to = ''
-  txParams.value = ''
-  txParams.data = tokencontract.data
-  txParams.gas = '0x47B760'
   try {
-    ora.info('deploying contract ')
+    ora.info('Deploying contract...')
     const done = await send(txParams, privateKey)
-    ora.info(`contractaddress ${done.contractAddress}`)
+    ora.info(`Contract address: ${done.contractAddress}`)
     contractAddress = done.contractAddress
   } catch (error) {
     ora.fail(JSON.stringify(error))
   }
-  txParams.to = contractAddress
+
+  txParams.to = ''
   txParams.value = ''
+  txParams.data = tokencontract.data
   txParams.gas = '0x47B760'
+  txParams.to = contractAddress
+
   // send token to all accounts
   for (const account of accounts) {
     txParams.data = bufferToHex(simpleEncode('transfer(address,uint256):(bool)', account.address, 6000))
     try {
-      ora.info(`calling transfer of contract address  ${JSON.stringify(txParams.to)}`)
+      ora.info(`Calling transfer of contract address: ${JSON.stringify(txParams.to)}`)
       const done = await send(txParams, privateKey)
-      ora.info(`txhash ${JSON.stringify(done.res)}`)
+      ora.info(`Tx hash: ${JSON.stringify(done.res)}`)
     } catch (error) {
       ora.fail(JSON.stringify(error))
+      return Promise.reject(error)
     }
   }
+
   return Promise.resolve()
 }
 
@@ -205,11 +227,10 @@ async function txDetails(txhash): Promise<any> {
 }
 
 commander
-  .command('run')
+  .command('random')
   .alias('r')
   .action(() => {
-    ora.text = 'Randomizing txs...'
-    ora.start()
+    ora.info('Randomizing txs...').start()
     fillAndSend(txParams)
   })
 
@@ -217,8 +238,7 @@ commander
   .command('fill')
   .alias('f')
   .action(() => {
-    ora.text = 'Fill accounts with ether ...'
-    ora.start()
+    ora.info('Filling accounts with ether...').start()
     fillAccountsWithEther(txParams)
   })
 
@@ -226,8 +246,7 @@ commander
   .command('deploy')
   .alias('d')
   .action(() => {
-    ora.text = 'Deploy token contract and send tokens to all account...'
-    ora.start()
+    ora.info('Deploying token contract and sending tokens to all accounts...').start()
     contractTxs(txParams)
   })
 
@@ -235,8 +254,7 @@ commander
   .command('balance')
   .alias('b')
   .action(address => {
-    ora.text = 'getting bal of ' + address
-    ora.start()
+    ora.info(`Obtaining balance of address: ${address}`)
     r.call(
       'eth_getBalance',
       [address, 'latest'],
@@ -247,7 +265,9 @@ commander
           ora.stopAndPersist()
           return
         }
-        ora.succeed('balabnce  !')
+
+        ora.clear()
+        ora.succeed(`Current balance: ${utils.fromWei(res, 'ether')} ether`)
         ora.stopAndPersist()
       }
     )
