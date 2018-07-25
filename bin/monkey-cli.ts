@@ -15,7 +15,7 @@ const ora = new Ora({
   spinner: 'dots',
   color: 'yellow'
 })
-const r = rpc.Client.$create(7545, 'localhost')
+const r = rpc.Client.$create(8545, 'localhost')
 
 interface Txp {
   from: string
