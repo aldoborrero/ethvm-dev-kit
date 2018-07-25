@@ -89,7 +89,6 @@ services:
       - "traefik.dashboard.port=8080"
     command: >
       bash -c "rm -rf /data/* && rethinkdb --bind all"
-
   geth:
     build:
       context: ./eth
