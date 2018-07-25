@@ -2,15 +2,15 @@
 
 import * as rpc from '@enkrypt.io/json-rpc2'
 import commander from 'commander'
-import * as abi from 'ethereumjs-abi'
+import { simpleEncode } from 'ethereumjs-abi'
 import EthereumTx from 'ethereumjs-tx'
-import * as EthUtil from 'ethereumjs-util'
+import { toBuffer, bufferToHex, generateAddress } from 'ethereumjs-util'
 import Ora from 'ora'
 
 import data from './accounts.json'
 
 const { accounts, tokencontract, from } = data
-const version = '0.1.0'
+
 const ora = new Ora({
   spinner: 'dots',
   color: 'yellow'
@@ -45,7 +45,6 @@ const txParams = {
 commander.description('Ethereum utility that helps to create random txs to aid in development').version(version, '-v, --version')
 
 function send(txP: Txp, privateKey: Buffer): Promise<Result> {
-  let ca
   return new Promise((resolve, reject) => {
     r.call(
       'eth_getTransactionCount',
@@ -53,7 +52,7 @@ function send(txP: Txp, privateKey: Buffer): Promise<Result> {
       (e: Error, res: any): void => {
         const nonce = parseInt(res)
         txP.nonce = '0x' + nonce.toString(16)
-        ca = EthUtil.generateAddress(EthUtil.toBuffer(txP.from), EthUtil.toBuffer(txP.nonce))
+        const ca = generateAddress(toBuffer(txP.from), toBuffer(txP.nonce))
         const tx = new EthereumTx(txP)
         tx.sign(privateKey)
         const serializedTx = '0x' + tx.serialize().toString('hex')
@@ -65,8 +64,7 @@ function send(txP: Txp, privateKey: Buffer): Promise<Result> {
               reject(e)
               return
             }
-            resolve({ res: res, contractAddress: EthUtil.bufferToHex(ca) })
-            return
+            resolve({ res: res, contractAddress: bufferToHex(ca) })
           }
         )
       }
@@ -86,7 +84,6 @@ function ethcall(txParams: Txp): Promise<any> {
           return
         }
         resolve({ res: res })
-        return
       }
     )
   })
@@ -138,10 +135,9 @@ async function fillAndSend(txParams: Txp): Promise<any> {
   if (parseInt(balance, 16) > 1000000000000000000) {
     await fillAccountsWithEther(txParams)
     await sendRandomTX(txParams)
-    // await contractTxs(txParams,accounts,t,ora)
     return Promise.resolve()
   }
-  ora.warn('Not enough balance in Account, Fill at least 100 ETH')
+  ora.warn('Not enough balance in Account, fill at least 100 ETH')
 }
 
 async function contractTxs(txParams: Txp): Promise<any> {
@@ -164,7 +160,7 @@ async function contractTxs(txParams: Txp): Promise<any> {
   txParams.gas = '0x47B760'
   // send token to all accounts
   for (const account of accounts) {
-    txParams.data = EthUtil.bufferToHex(abi.simpleEncode('transfer(address,uint256):(bool)', account.address, 6000))
+    txParams.data = bufferToHex(simpleEncode('transfer(address,uint256):(bool)', account.address, 6000))
     try {
       ora.info(`calling transfer of contract address  ${JSON.stringify(txParams.to)}`)
       const done = await send(txParams, privateKey)
@@ -187,7 +183,6 @@ async function checkBalance(addr): Promise<any> {
           return
         }
         resolve(res)
-        return
       }
     )
   })
@@ -204,7 +199,6 @@ async function txDetails(txhash): Promise<any> {
           return
         }
         resolve(res)
-        return
       }
     )
   })
@@ -221,7 +215,7 @@ commander
 
 commander
   .command('fill')
-  .alias('r')
+  .alias('f')
   .action(() => {
     ora.text = 'Fill accounts with ether ...'
     ora.start()
