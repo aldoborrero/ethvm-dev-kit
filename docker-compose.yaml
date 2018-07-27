@@ -59,6 +59,9 @@ services:
       - "traefik.frontend.headers.customResponseHeaders=Access-Control-Allow-Origin:http://ethvm.lan||Access-Control-Allow-Credentials:true"
       - "traefik.frontend.passHostHeader=true"
       - "traefik.backend=ethvm_socket_server"
+    environment:
+      - ETHVM_DATA_STORE_REDIS_HOST=redis
+      - ETHVM_RETHINK_DB_HOST=rethinkdb
 
   redis:
     image: redis:4.0.9-alpine
