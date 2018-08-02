@@ -68,12 +68,16 @@ services:
     restart: unless-stopped
     networks:
       - web
+    ports:
+      - 6379:6379
     labels:
       - "traefik.enable=true"
       - "traefik.default.protocol=http"
       - "traefik.frontend.rule=Host:redis.ethvm.lan"
       - "traefik.port=6379"
       - "traefik.backend=redis"
+    command: >
+      sh -c "redis-server && redis-cli flushall"
 
   rethinkdb:
     image: rethinkdb:2.3.6
