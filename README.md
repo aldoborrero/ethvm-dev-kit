@@ -1,6 +1,6 @@
 <div align="center">
   <h1>
-    <img src="https://raw.githubusercontent.com/enKryptIO/ethvm-dev-kit/master/assets/logo.png" alt="ethvm-logo">
+    <img src="https://raw.githubusercontent.com/enKryptIO/ethvm-dev-kit/master/.github/assets/logo.png" alt="ethvm-logo">
   </h1>
 </div>
 
