@@ -1,71 +1,47 @@
 <div align="center">
+  <img src="https://raw.githubusercontent.com/enKryptIO/ethvm/master/.github/assets/logo.png" alt="ethvm-logo">
+  <p>:zap::zap::zap: EthVM Project: An open source blockchain explorer for Ethereum (and related networks) :zap::zap::zap:</p>
+  <p>Powered by <a href="https://www.typescriptlang.org/">TypeScript</a> / <a href="https://github.com/socketio/socket.io">Socket.io</a> / <a href="https://github.com/ethereum/go-ethereum">go-ethereum</a> / <a href="https://github.com/rethinkdb/rethinkdb">RethinkDB</a> / <a href="https://redis.io/topics/quickstart">Redis</a></p>
+</div>
+
+<div align="center">
   <h1>
-    <img src="https://raw.githubusercontent.com/enKryptIO/ethvm-dev-kit/master/.github/assets/logo.png" alt="ethvm-logo">
+    <img src="https://raw.githubusercontent.com/enKryptIO/ethvm/master/.github/assets/logo.png" alt="ethvm-logo">
   </h1>
 </div>
 
-# EthVM: Development Kit
+# EthVM: Ethereum Blockchain Explorer
 
-A dockerized environment for developing with ease and joyness the EthVM project.
+## Philosophy
 
-This repository is just composed of three projects and a simple Dockerfile and the following `git submodules`:
+We have strong foundations on how an Open Source explorer should be:
 
-- [EthVM: Frontend](https://github.com/enKryptIO/ethvm)
-- [EthVM: Socket Server](https://github.com/enKryptIO/ethvm-socket-server)
-- [EthVM: Ethereum](https://github.com/enKryptIO/go-ethereum)
+- **Empower the people**: Give people the ability to inspect the Ethereum blockchain easily, pretty much like [etherscan](https://etherscan.io/) does.
+- **Open source & audit-able**: Having an open source foundation, will guarantee free access to inspect, audit and modify whatever you want or need, without any vendor lock-in.
+- **People are the Priority**: People are the most important & their experience trumps all else. If monetization worsens the experience, we don't do it. (e.g. ads)
+- **A learning experience, too**: We want to educate about Ethereum, security, privacy, the importance of controlling your own keys, how the blockchain works, and how Ethereum and blockchain technologies enable a better world.
+- **Private**: No tracking!!! No emails. No ads. No demographics. We don't even know how many wallets have been generated, let alone who / what / where you are.
 
-## Cloning
+## Architecture Overwiew
 
-Just issue this command on the terminal:
+To be written...
 
-```sh
-$ git clone --recurse-submodules https://github.com/enKryptIO/ethvm-dev-kit
-```
+## Project Structure
 
-When everyhing is done, just make sure that each of the submodules are on the `master` branch (or the one you prefer to work on).
+To be written...
+
+## Getting Started
+
+These instructions will get you a copy of the project up and running on your local machine for development and testing puposes.
 
 ## Perequisites
 
-### Setting up properly submodules
+There are two ways to develop on EthVM:
 
-Initially, when you issue the git cloning command, it will pull automatically all the submodules on the master branch. Sweet.
+1.  Using `docker`. This will provide the complete experience to develop the whole EthVM project (i.e: backend and frontend at the same time).
+2.  Manual method.
 
-The only caveat is that this `docker-compose.yaml` uses mounted volumes to allow having hot code reload benefits in the frontend and the backend. By default, when `git` uses submodules, it creates a `.git` file that points to the parent directory, like this:
-
-```txt
-gitdir: ../.git/modules/ethvm-server
-```
-
-This file allows you to issue `git` commands inside each submodule like a regular `git` repository. In our case, Docker images are built locally and uses `yarn` to fetch dependencies (like a regular NodeJs app), but with the exception that some of them requires the usage of `git` (i.e, [husky](https://github.com/husky/husky) uses it to register commit hooks), so having the pointer file as above, will confuse those packages as they expect a regular `.git` directory. 
-
-So, as a summary, just before issuing the very first `docker-compose` command, we recommend you to delete each `.git` submodule file and replace it using a symbolic link that will point to the directory, just like this:
-
-```sh
-# In parent dev-kit dir
-
-# Delete
-$ rm client/.git server/.git
-
-# Link server
-$ cd server
-$ ln -s ../.git/modules/ethvm-server .git
-
-# Go to parent
-$ cd ..
-
-# Link client
-$ cd client
-$ ln -s ../.git/modules/ethvm-frontend .git
-```
-
-### Windows 10
-
-Windows 10 is becoming a very sexy operating system to develop, even with classical *nix applications. 
-
-Although, there are some caveats we need to take care of, at the point while we were testing, we found the following issues:
-
-* **go-ethereum**: Docker doesn't build properly the image [(reason here)](https://github.com/ethereum/go-ethereum/issues/16828). To solve it, for now, is to use the uploaded version on Docker Hub (so point to the following image: `enkryptio/go-ethereum:latest`)
-* **traefik**: The image uses a shared mounted volume, depending on the installed version you have of docker, it may not init properly. [In this thread here's the solution](https://github.com/docker/for-win/issues/1829) (basically, if you use PowerShell, set the environment variable `$Env:COMPOSE_CONVERT_WINDOWS_PATHS=1`).
+So, choose your own path depending on which experience you want to have (keep in mind that using `docker` and `docker-compose` will streamline a lot the different dependencies you need in order to have a proper setup, so, if you want to start developing ASAP, using `docker` will be a better choice. Also, we don't provide support for manual method, so you have to figure out yourself how to connect things properly).
 
 ### Setup a local DNS (or edit hosts file)
 
@@ -83,6 +59,15 @@ Or you can take the classical approach to edit and add these entries in `/etc/ho
 127.0.0.1       redis.ethvm.lan
 127.0.0.1       ethvm.lan
 ```
+
+### Windows 10
+
+Windows 10 is becoming a very sexy operating system to develop, even with classical *nix applications. 
+
+Although, there are some caveats we need to take care of, for now we have detected the following issues:
+
+* **go-ethereum**: Docker doesn't build properly the image [(reason here)](https://github.com/ethereum/go-ethereum/issues/16828). To solve it, for now, is to use the uploaded version on Docker Hub (so point to the following image: `enkryptio/go-ethereum:latest`)
+* **traefik**: The image uses a shared mounted volume, depending on the installed version you have of docker, it may not init properly. [In this thread here's the solution](https://github.com/docker/for-win/issues/1829) (basically, if you use PowerShell, set the environment variable `$Env:COMPOSE_CONVERT_WINDOWS_PATHS=1`).
 
 ## Developing
 
