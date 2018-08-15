@@ -5,8 +5,8 @@ import commander from 'commander'
 import { simpleEncode } from 'ethereumjs-abi'
 import EthereumTx from 'ethereumjs-tx'
 import { bufferToHex, generateAddress, toBuffer } from 'ethereumjs-util'
-import * as utils from 'web3-utils'
 import Ora from 'ora'
+import * as utils from 'web3-utils'
 
 import data from './accounts.json'
 
@@ -61,12 +61,12 @@ function send(txP: Txp, privateKey: Buffer): Promise<Result> {
         r.call(
           'eth_sendRawTransaction',
           [serializedTx],
-          (e: Error, res: any): void => {
-            if (e) {
-              reject(e)
+          (err: Error, r: any): void => {
+            if (err) {
+              reject(err)
               return
             }
-            resolve({ res: res, contractAddress: bufferToHex(ca) })
+            resolve({ res: r, contractAddress: bufferToHex(ca) })
           }
         )
       }
@@ -85,7 +85,7 @@ function ethcall(txParams: Txp): Promise<any> {
           reject(e)
           return
         }
-        resolve({ res: res })
+        resolve({ res })
       }
     )
   })
@@ -111,7 +111,7 @@ async function fillAccountsWithEther(txParams: Txp): Promise<any> {
   return Promise.resolve()
 }
 
-async function sendRandomTX(txParams: Txp, iter: Number = 10): Promise<any> {
+async function sendRandomTX(txParams: Txp, iter: number = 10): Promise<any> {
   let sent = 0
   let i = 0
   while (i < iter) {
