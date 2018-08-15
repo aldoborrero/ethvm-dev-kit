@@ -11,7 +11,7 @@ services:
     restart: unless-stopped
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - ./.docker/config/traefik/traefik.dev.toml:/etc/traefik/traefik.toml
+      - ./provisioners/docker/config/traefik/traefik.dev.toml:/etc/traefik/traefik.toml
     networks:
       - web
     ports:
@@ -21,7 +21,7 @@ services:
   ethvm:
     build:
       context: ./client
-      dockerfile: ../.docker/images/client/Dockerfile
+      dockerfile: ../provisioners/docker/images/dev/client/Dockerfile
     restart: unless-stopped
     volumes:
       - ./client:/var/ethvm
@@ -42,7 +42,7 @@ services:
   ethvm_socket_server:
     build:
       context: ./server
-      dockerfile: ../.docker/images/server/Dockerfile
+      dockerfile: ../provisioners/docker/images/dev/server/Dockerfile
     restart: unless-stopped
     volumes:
       - ./server:/var/ethvm-server
@@ -99,13 +99,13 @@ services:
   geth:
     build:
       context: ./eth
-      dockerfile: ../.docker/images/eth/Dockerfile
+      dockerfile: ../provisiners/docker/images/dev/eth/Dockerfile
     restart: unless-stopped
     depends_on:
       - rethinkdb
     volumes:
-      - ./.docker/config/geth/genesis.json:/genesis.json
-      - ./.docker/config/geth/keystore/:/keystore/
+      - ./provisioners/docker/config/geth/genesis.json:/genesis.json
+      - ./provisioners/docker/config/geth/keystore/:/keystore/
     networks:
       - web
     ports:
