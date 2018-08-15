@@ -16,7 +16,7 @@ We have strong foundations on how an Open Source explorer should be:
 - **A learning experience, too**: We want to educate about Ethereum, security, privacy, the importance of controlling your own keys, how the blockchain works, and how Ethereum and blockchain technologies enable a better world.
 - **Private**: No tracking!!! No emails. No ads. No demographics. We don't even know how many wallets have been generated, let alone who / what / where you are.
 
-## Architecture Overwiew
+## Architecture Overview
 
 To be written...
 
