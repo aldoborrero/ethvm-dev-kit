@@ -20,11 +20,11 @@ services:
 
   ethvm:
     build:
-      context: ./client
-      dockerfile: ../provisioners/docker/images/dev/client/Dockerfile
+      context: ./src/client
+      dockerfile: ../../provisioners/docker/images/dev/client/Dockerfile
     restart: unless-stopped
     volumes:
-      - ./client:/var/ethvm
+      - ./src/client:/var/ethvm
     networks:
       - web
     labels:
@@ -41,11 +41,11 @@ services:
 
   ethvm_socket_server:
     build:
-      context: ./server
-      dockerfile: ../provisioners/docker/images/dev/server/Dockerfile
+      context: ./src/server
+      dockerfile: ../../provisioners/docker/images/dev/server/Dockerfile
     restart: unless-stopped
     volumes:
-      - ./server:/var/ethvm-server
+      - ./src/server:/var/ethvm-server
     depends_on:
       - geth
       - redis
@@ -98,8 +98,8 @@ services:
 
   geth:
     build:
-      context: ./eth
-      dockerfile: ../provisiners/docker/images/dev/eth/Dockerfile
+      context: ./src/eth
+      dockerfile: ../../provisiners/docker/images/dev/eth/Dockerfile
     restart: unless-stopped
     depends_on:
       - rethinkdb
