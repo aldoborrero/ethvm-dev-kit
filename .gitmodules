@@ -1,7 +1,3 @@
-[submodule "packages/ethereumjs-vm"]
-	path = packages/ethereumjs-vm
-	url = https://github.com/enKryptIO/ethereumjs-vm
-  branch = master
 [submodule "src/client"]
 	path = src/client
 	url = https://github.com/enKryptIO/ethvm.git

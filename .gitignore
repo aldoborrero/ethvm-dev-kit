@@ -18,6 +18,3 @@ yarn-error.log*
 
 # npm
 package-lock.json
-
-# docker
-.docker/volumes/geth
