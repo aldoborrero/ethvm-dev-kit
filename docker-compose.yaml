@@ -99,7 +99,7 @@ services:
   geth:
     build:
       context: ./src/eth
-      dockerfile: ../../provisiners/docker/images/dev/eth/Dockerfile
+      dockerfile: ../../provisioners/docker/images/dev/eth/Dockerfile
     restart: unless-stopped
     depends_on:
       - rethinkdb
