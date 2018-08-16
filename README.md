@@ -28,7 +28,7 @@ To be written...
 
 These instructions will get you a copy of the project up and running on your local machine for development and testing puposes.
 
-## Perequisites
+## Prerequisites
 
 There are two ways to develop on EthVM:
 
