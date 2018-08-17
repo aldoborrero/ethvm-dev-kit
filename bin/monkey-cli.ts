@@ -40,7 +40,7 @@ const txParams = {
   nonce: '0x00',
   gas: '0x7B0C',
   data: null,
-  gasPrice: '0x000000001',
+  gasPrice: '0x430E23400',
   value: '0x1'
 }
 
