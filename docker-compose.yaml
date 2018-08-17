@@ -3,6 +3,11 @@ version: '3.6'
 networks:
   web:
     external: true
+  back:
+    driver: bridge
+    ipam:
+      config:
+      - subnet: 172.25.0.0/24
 
 services:
 
@@ -14,6 +19,7 @@ services:
       - ./provisioners/docker/config/traefik/traefik.dev.toml:/etc/traefik/traefik.toml
     networks:
       - web
+      - back
     ports:
       - 80:80
       - 81:81
@@ -26,7 +32,7 @@ services:
     volumes:
       - ./src/client:/var/ethvm
     networks:
-      - web
+      - back
     labels:
       - "traefik.enable=true"
       - "traefik.default.protocol=http"
@@ -51,7 +57,7 @@ services:
       - redis
       - rethinkdb
     networks:
-      - web
+      - back
     labels:
       - "traefik.enable=true"
       - "traefik.default.protocol=http"
@@ -68,7 +74,7 @@ services:
     image: redis:4.0.9-alpine
     restart: unless-stopped
     networks:
-      - web
+      - back
     labels:
       - "traefik.enable=true"
       - "traefik.default.protocol=http"
@@ -82,7 +88,7 @@ services:
     image: rethinkdb:2.3.6
     restart: unless-stopped
     networks:
-      - web
+      - back
     labels:
       - "traefik.enable=true"
       - "traefik.default.protocol=http"
@@ -96,18 +102,41 @@ services:
     command: >
       bash -c "rm -rf /data/* && rethinkdb --bind all"
 
+  geth_miner:
+    build:
+      context: ./src/eth
+      dockerfile: ../../provisioners/docker/images/dev/eth/Dockerfile
+    restart: unless-stopped
+    volumes:
+      - ./provisioners/docker/config/geth/genesis.json:/genesis.json
+      - ./provisioners/docker/config/geth/keystore/:/keystore/
+    networks:
+      back:
+        ipv4_address: 172.25.0.101
+    command:
+      - /bin/zsh
+      - -c
+      - |
+        rm -rf /geth && mkdir -p /geth/keystore
+        cp -a /keystore/. /geth/keystore/
+        geth --datadir '/geth' init /genesis.json
+        geth --datadir '/geth' --networkid 1234 --identity geth_miner --mine --minerthreads 1 --nousb --unlock '84baabad835e6ca9252658cd6eae0152f6330c09' --rpc --rpcaddr '0.0.0.0' --password =(echo '123456789') --nodiscover --maxpeers 2 --nodekeyhex '08f0e1dee5c1b4645f3331a566009e41a4514b6cd28656d63d0449ecf812812b'
+
   geth:
     build:
       context: ./src/eth
       dockerfile: ../../provisioners/docker/images/dev/eth/Dockerfile
     restart: unless-stopped
     depends_on:
+      - geth_miner
       - rethinkdb
     volumes:
       - ./provisioners/docker/config/geth/genesis.json:/genesis.json
       - ./provisioners/docker/config/geth/keystore/:/keystore/
+      - ./provisioners/docker/config/geth/static-nodes.json:/static-nodes.json
     networks:
-      - web
+      back:
+        ipv4_address: 172.25.0.102
     ports:
       - 8545:8545
     labels:
@@ -124,5 +153,6 @@ services:
       - |
         rm -rf /geth && mkdir -p /geth/keystore
         cp -a /keystore/. /geth/keystore/
+        cp /static-nodes.json /geth/
         geth --datadir '/geth' --ethvm init /genesis.json
-        geth --datadir '/geth' --networkid 1234 --mine --minerthreads 1 --ethvm --gcmode archive --rpc --rpcaddr '0.0.0.0' --rpcapi 'personal,db,eth,net,web3,txpool,miner' --syncmode full --nousb --nodiscover --unlock '84baabad835e6ca9252658cd6eae0152f6330c09' --password =(echo '123456789')
+        geth --datadir '/geth' --verbosity 6 --networkid 1234 --identity geth --ethvm --gcmode archive --rpc --rpcaddr '0.0.0.0' --rpccorsdomain '*' --rpcapi 'admin,personal,db,eth,net,web3,txpool,miner' --syncmode full --nat 'extip:172.25.0.102' --nousb --nodiscover --maxpeers 2
